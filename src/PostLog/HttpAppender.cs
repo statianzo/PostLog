@@ -3,80 +3,40 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Web;
-using System.Web.Script.Serialization;
-using System.Xml.Linq;
 using log4net.Appender;
 using log4net.Core;
-using log4net.Layout;
 
-namespace LogPost
+namespace PostLog
 {
 	public class HttpAppender : AppenderSkeleton
 	{
 		private readonly List<HttpAppenderAttribute> _parameters;
-		private readonly JavaScriptSerializer _serializer;
+		private IBodyFormatter _formatter;
 
 		public HttpAppender()
 		{
 			_parameters = new List<HttpAppenderAttribute>();
-			_serializer = new JavaScriptSerializer();
 
 			Method = "POST";
 			UserAgent = "HttpAppender";
-			Format = "FORM";
-			XmlRootName = "log";
 		}
 
 		public string Method { get; set; }
-		public string XmlRootName { get; set; }
 		public string UserAgent { get; set; }
-		public string Format { get; set; }
 		public string Uri { get; set; }
+		public string FormatterType { get; set; }
 
-		public string CreateJsonBody(LoggingEvent loggingEvent)
+		private IBodyFormatter BodyFormatter
 		{
-			var formattedAttributes = new Dictionary<string, object>();
-			foreach (HttpAppenderAttribute attribute in _parameters)
-				formattedAttributes[attribute.Name] = attribute.Layout.Format(loggingEvent);
-			return _serializer.Serialize(formattedAttributes);
+			get { return _formatter ?? (_formatter = ConstructFormatter(FormatterType)); }
 		}
 
-		public string CreateXmlBody(LoggingEvent loggingEvent)
+		public IBodyFormatter ConstructFormatter(string formatterType)
 		{
-			var root = new XElement(XmlRootName);
-			foreach (HttpAppenderAttribute attribute in _parameters)
-				root.Add(new XElement(attribute.Name, attribute.Layout.Format(loggingEvent)));
-
-			return root.ToString(SaveOptions.DisableFormatting);
+			Type type = Type.GetType(formatterType, true);
+			return (IBodyFormatter) Activator.CreateInstance(type);
 		}
 
-		public string CreateFormBody(LoggingEvent loggingEvent)
-		{
-			var bodyBuilder = new StringBuilder();
-			foreach (HttpAppenderAttribute attribute in _parameters)
-			{
-				object value = attribute.Layout.Format(loggingEvent);
-				bodyBuilder.AppendFormat("{0}={1}&", attribute.Name, HttpUtility.HtmlEncode(value.ToString()));
-			}
-			return bodyBuilder.ToString();
-		}
-
-		public string CreateBody(LoggingEvent loggingEvent)
-		{
-			switch (Format.ToUpper())
-			{
-				case "JSON":
-					return CreateJsonBody(loggingEvent);
-				case "FORM":
-					return CreateFormBody(loggingEvent);
-				case "XML":
-					return CreateXmlBody(loggingEvent);
-				default:
-					ErrorHandler.Error("Invalid format specified: " + Format);
-					return "";
-			}
-		}
 
 		public void AddParameter(HttpAppenderAttribute item)
 		{
@@ -89,7 +49,7 @@ namespace LogPost
 
 			try
 			{
-				string body = CreateBody(loggingEvent);
+				string body = BodyFormatter.CreateBody(loggingEvent, _parameters);
 				bodyBytes = Encoding.UTF8.GetBytes(body);
 			}
 			catch (Exception e)
@@ -112,9 +72,7 @@ namespace LogPost
 									{
 										try
 										{
-											var response = (HttpWebResponse)request.EndGetResponse(a);
-											((IDisposable)request).Dispose();
-											((IDisposable)response).Dispose();
+											request.EndGetResponse(a);
 										}
 										catch (Exception e)
 										{
@@ -133,17 +91,12 @@ namespace LogPost
 
 		private HttpWebRequest BuildRequest()
 		{
-			var request = (HttpWebRequest)WebRequest.Create(Uri);
+			var request = (HttpWebRequest) WebRequest.Create(Uri);
 			request.Method = Method;
 			request.UserAgent = UserAgent;
+			request.ContentType = BodyFormatter.ContentType;
 
 			return request;
 		}
-	}
-
-	public class HttpAppenderAttribute
-	{
-		public string Name { get; set; }
-		public IRawLayout Layout { get; set; }
 	}
 }

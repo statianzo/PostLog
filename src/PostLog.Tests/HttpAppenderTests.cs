@@ -1,8 +1,12 @@
 ﻿using System;
+using System.IO;
+using System.Net;
+using System.Threading;
 using FakeItEasy;
+using log4net;
+using log4net.Config;
 using log4net.Core;
 using log4net.Layout;
-using LogPost;
 using NUnit.Framework;
 
 namespace PostLog.Tests
@@ -18,27 +22,42 @@ namespace PostLog.Tests
 
 		private HttpAppender _appender;
 
-		private void AddParameter(string name)
+		[Test]
+		public void ShouldCreateFormatter()
 		{
-			var layout = A.Fake<IRawLayout>();
-			A.CallTo(() => layout.Format(A<LoggingEvent>.Ignored)).Returns("value-of-" + name);
-			var attribute = new HttpAppenderAttribute
-			{
-				Name = name,
-				Layout = layout
-			};
-			_appender.AddParameter(attribute);
+			var formatterName = typeof (JsonBodyFormatter).FullName;
+			var formatter = _appender.ConstructFormatter(formatterName);
+			Assert.IsInstanceOf<JsonBodyFormatter>(formatter);
 		}
 
 		[Test]
-		public void ShouldCreateFormBody()
+		public void ShouldConfigure()
 		{
-			var e = new LoggingEvent(new LoggingEventData());
-			AddParameter("thread");
-			AddParameter("message");
-			AddParameter("exception");
-			string body = _appender.CreateFormBody(e);
-			Console.WriteLine(body);
+			XmlConfigurator.Configure();
+			ILog logger = LogManager.GetLogger(typeof(HttpAppenderTests));
+
+			using (var listener = new HttpListener())
+			{
+				listener.Prefixes.Add("http://localhost:34343/");
+				listener.Start();
+				try
+				{
+					throw new Exception("KABOOM!");
+				}
+				catch (Exception e)
+				{
+					logger.Error("Oh noes!", e);
+				}
+
+				var ctx = listener.GetContext();
+				using (var reader = new StreamReader(ctx.Request.InputStream))
+				{
+					var body = reader.ReadToEnd();
+					Console.WriteLine(body);
+					Assert.IsNotNull(body);
+				}
+				ctx.Response.Close();
+			}
 		}
 	}
 }
