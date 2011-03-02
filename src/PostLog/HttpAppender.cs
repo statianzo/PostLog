@@ -34,7 +34,7 @@ namespace PostLog
 		public IBodyFormatter ConstructFormatter(string formatterType)
 		{
 			Type type = Type.GetType(formatterType, true);
-			return (IBodyFormatter) Activator.CreateInstance(type);
+			return (IBodyFormatter)Activator.CreateInstance(type);
 		}
 
 
@@ -62,36 +62,46 @@ namespace PostLog
 
 			request.BeginGetRequestStream(r =>
 				{
-					Stream stream = request.EndGetRequestStream(r);
-					stream.BeginWrite(bodyBytes, 0, bodyBytes.Length, c =>
-						{
-							try
+
+					try
+					{
+						Stream stream = request.EndGetRequestStream(r);
+						stream.BeginWrite(bodyBytes, 0, bodyBytes.Length, c =>
 							{
-								stream.Dispose();
-								request.BeginGetResponse(a =>
-									{
-										try
+								try
+								{
+									stream.Dispose();
+									request.BeginGetResponse(a =>
 										{
-											request.EndGetResponse(a);
-										}
-										catch (Exception e)
-										{
-											ErrorHandler.Error("Failed to get response", e);
-										}
-									}, null);
-								stream.EndWrite(c);
-							}
-							catch (Exception e)
-							{
-								ErrorHandler.Error("Failed to write", e);
-							}
-						}, null);
+											try
+											{
+												request.EndGetResponse(a);
+											}
+											catch (Exception e)
+											{
+												ErrorHandler.Error("Failed to get response", e);
+											}
+										}, null);
+									stream.EndWrite(c);
+								}
+								catch (Exception e)
+								{
+									ErrorHandler.Error("Failed to write", e);
+								}
+							}, null);
+
+					}
+					catch (Exception e)
+					{
+
+						ErrorHandler.Error("Failed to connect", e);
+					}
 				}, null);
 		}
 
 		private HttpWebRequest BuildRequest()
 		{
-			var request = (HttpWebRequest) WebRequest.Create(Uri);
+			var request = (HttpWebRequest)WebRequest.Create(Uri);
 			request.Method = Method;
 			request.UserAgent = UserAgent;
 			request.ContentType = BodyFormatter.ContentType;
