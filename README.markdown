@@ -1,5 +1,5 @@
-PostLog
----
+PostLog ![project-status](http://stillmaintained.com/statianzo/PostLog.png)
+===
 
 PostLog is an appender for log4net designed to submit log messages via HTTP.
 
@@ -19,7 +19,7 @@ Also, you must add `parameter` tags for each value that is sent.
 
 Example
 ---
-
+```xml
     <log4net>
       <appender name="HttpAppender" type="PostLog.HttpAppender">
         <uri value="http://localhost:34343/log" />
@@ -50,13 +50,13 @@ Example
       </root>
     </log4net>
   </configuration>
-
+```
 License
 ---
 
 The MIT License
 
-Copyright (c) 2010 Jason Staten
+Copyright (c) 2010-2011 Jason Staten
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
