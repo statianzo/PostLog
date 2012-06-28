@@ -25,6 +25,8 @@ namespace PostLog
 		public string UserAgent { get; set; }
 		public string Uri { get; set; }
 		public string FormatterType { get; set; }
+		public string UserId { get; set; }
+		public string Password { get; set; }
 
 		private IBodyFormatter BodyFormatter
 		{
@@ -105,6 +107,11 @@ namespace PostLog
 			request.Method = Method;
 			request.UserAgent = UserAgent;
 			request.ContentType = BodyFormatter.ContentType;
+
+			if (UserId != null && Password != null)
+			{
+				request.Credentials = new NetworkCredential(UserId, Password);
+			}
 
 			return request;
 		}
