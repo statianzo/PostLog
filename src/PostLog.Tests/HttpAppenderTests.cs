@@ -39,7 +39,9 @@ namespace PostLog.Tests
 			using (var listener = new HttpListener())
 			{
 				listener.Prefixes.Add("http://localhost:34343/");
+				listener.AuthenticationSchemes = AuthenticationSchemes.Basic;
 				listener.Start();
+
 				try
 				{
 					throw new Exception("KABOOM!");
@@ -55,6 +57,10 @@ namespace PostLog.Tests
 					var body = reader.ReadToEnd();
 					Console.WriteLine(body);
 					Assert.IsNotNull(body);
+
+					HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)ctx.User.Identity;
+					Assert.AreEqual("derp", identity.Name);
+					Assert.AreEqual("darp", identity.Password);
 				}
 				ctx.Response.Close();
 			}
