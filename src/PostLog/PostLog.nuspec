@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>log4net.PostLog</id>
+    <version>0.1</version>
+    <title>Log4Net PostLog</title>
+    <authors>statianzo</authors>
+    <owners>matthewsteeples</owners>
+    <projectUrl>https://github.com/statianzo/PostLog</projectUrl>
+    <description>An HttpAppender for log4net</description>
+    <copyright>Copyright 2013</copyright>
+    <tags>log4net logging</tags>
+  </metadata>
+</package>
