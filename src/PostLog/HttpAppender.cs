@@ -67,30 +67,34 @@ namespace PostLog
 
 					try
 					{
-						Stream stream = request.EndGetRequestStream(r);
-						stream.BeginWrite(bodyBytes, 0, bodyBytes.Length, c =>
-							{
-								try
+						using (Stream stream = request.EndGetRequestStream(r))
+						{
+							stream.BeginWrite(bodyBytes, 0, bodyBytes.Length, c =>
 								{
-									stream.Dispose();
-									request.BeginGetResponse(a =>
-										{
-											try
+									try
+									{
+										stream.EndWrite(c);
+										request.BeginGetResponse(a =>
 											{
-												request.EndGetResponse(a);
-											}
-											catch (Exception e)
-											{
-												ErrorHandler.Error("Failed to get response", e);
-											}
-										}, null);
-									stream.EndWrite(c);
-								}
-								catch (Exception e)
-								{
-									ErrorHandler.Error("Failed to write", e);
-								}
-							}, null);
+												try
+												{
+													var response = request.EndGetResponse(a);
+													if (((HttpWebResponse)response).StatusCode != HttpStatusCode.OK)
+														ErrorHandler.Error("Got failed response: " + ((HttpWebResponse)response).StatusDescription);
+													response.Close();
+												}
+												catch (Exception e)
+												{
+													ErrorHandler.Error("Failed to get response", e);
+												}
+											}, null);
+									}
+									catch (Exception e)
+									{
+										ErrorHandler.Error("Failed to write", e);
+									}
+								}, null);
+						}
 
 					}
 					catch (Exception e)
