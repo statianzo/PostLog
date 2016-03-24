@@ -23,6 +23,7 @@ Example
     <log4net>
       <appender name="HttpAppender" type="PostLog.HttpAppender">
         <uri value="http://localhost:34343/log" />
+        <formatterType value="PostLog.JsonBodyFormatter, PostLog"/>
         <parameter>
           <name value="date" />
           <layout type="log4net.Layout.RawTimeStampLayout" />
