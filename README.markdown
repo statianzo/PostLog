@@ -1,4 +1,4 @@
-PostLog ![project-status](http://stillmaintained.com/statianzo/PostLog.png)
+PostLog
 ===
 
 PostLog is an appender for log4net designed to submit log messages via HTTP.
@@ -12,8 +12,7 @@ Several options are available.
 - `uri` The location to send the HTTP Request
 - `method` The HTTP method to be used (defaults to POST)
 - `useragent` The value of the useragent header
-- `format` The format to serialize the log data. Options are *form*, *json*, and *xml*
-- `xmlrootname` root element tag for xml
+- `formatterType` The IBodyFormatter implementation to serialize logs
 
 Also, you must add `parameter` tags for each value that is sent.
 
